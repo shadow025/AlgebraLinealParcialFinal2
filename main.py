@@ -70,6 +70,86 @@ def mostrar_matriz(matriz, formato):
         else:  # Decimal
             print("| " + " | ".join(f"{x:>12.6f}" for x in fila) + " |")
 
+def mostrar_ecuaciones(matriz):
+    """Muestra el sistema de ecuaciones en formato estándar"""
+    print("\nSistema de ecuaciones:")
+    for i, fila in enumerate(matriz):
+        ecuacion = ""
+        for j, coef in enumerate(fila[:-1]):
+            if j == 0:
+                if coef != 0:
+                    if coef == 1:
+                        ecuacion += f"x{j+1}"
+                    elif coef == -1:
+                        ecuacion += f"-x{j+1}"
+                    else:
+                        ecuacion += f"{coef}x{j+1}"
+            else:
+                if coef > 0:
+                    if coef == 1:
+                        ecuacion += f" + x{j+1}"
+                    else:
+                        ecuacion += f" + {coef}x{j+1}"
+                elif coef < 0:
+                    if coef == -1:
+                        ecuacion += f" - x{j+1}"
+                    else:
+                        ecuacion += f" - {abs(coef)}x{j+1}"
+        ecuacion += f" = {fila[-1]}"
+        print(f"Ecuación {i+1}: {ecuacion}")
+
+def eliminacion_gaussiana(matriz, formato):
+    """Realiza eliminación gaussiana básica (no Gauss-Jordan)"""
+    if not matriz:
+        raise ValueError("La matriz está vacía")
+        
+    filas = len(matriz)
+    columnas = len(matriz[0])
+    paso = 1
+    
+    # Copiamos la matriz para no modificar la original
+    matriz_trabajo = [fila[:] for fila in matriz]
+    
+    print("\n══════════════════════════════════════════")
+    print("  MÉTODO: ELIMINACIÓN GAUSSIANA")
+    print("══════════════════════════════════════════")
+    
+    for i in range(min(filas, columnas - 1)):
+        # Pivoteo parcial
+        max_fila = i
+        max_valor = abs(matriz_trabajo[i][i]) if i < len(matriz_trabajo) and i < len(matriz_trabajo[i]) else 0
+        
+        for k in range(i + 1, filas):
+            if k < len(matriz_trabajo) and i < len(matriz_trabajo[k]) and abs(matriz_trabajo[k][i]) > max_valor:
+                max_fila = k
+                max_valor = abs(matriz_trabajo[k][i])
+        
+        # Si el máximo es cero, continuar
+        if max_valor < 1e-10:
+            print(f"\nPaso {paso}: El pivote es cero, se omite la columna {i+1}")
+            paso += 1
+            continue
+            
+        # Intercambiar filas si es necesario
+        if max_fila != i:
+            matriz_trabajo[i], matriz_trabajo[max_fila] = matriz_trabajo[max_fila], matriz_trabajo[i]
+            print(f"\nPaso {paso}: Intercambiar F{i+1} ↔ F{max_fila+1}")
+            mostrar_matriz(matriz_trabajo, formato)
+            paso += 1
+        
+        # Eliminación hacia abajo
+        for k in range(i + 1, filas):
+            if abs(matriz_trabajo[k][i]) > 1e-10:
+                factor = matriz_trabajo[k][i] / matriz_trabajo[i][i]
+                for j in range(i, columnas):
+                    matriz_trabajo[k][j] -= factor * matriz_trabajo[i][j]
+                    
+                print(f"\nPaso {paso}: F{k+1} = F{k+1} - ({Fraction(factor).limit_denominator()} × F{i+1})")
+                mostrar_matriz(matriz_trabajo, formato)
+                paso += 1
+                
+    return matriz_trabajo
+
 def gauss_jordan(matriz, formato):
     """Realiza eliminación Gauss-Jordan mostrando pasos"""
     if not matriz:
@@ -85,11 +165,11 @@ def gauss_jordan(matriz, formato):
     # Copiamos la matriz para no modificar la original
     matriz_trabajo = [fila[:] for fila in matriz]
     
-    for i in range(filas):
-        # Asegurarse de que estamos dentro de los límites de columnas
-        if i >= columnas - 1:
-            break
-            
+    print("\n══════════════════════════════════════════")
+    print("  MÉTODO: GAUSS-JORDAN")
+    print("══════════════════════════════════════════")
+    
+    for i in range(min(filas, columnas - 1)):
         # Pivoteo parcial
         max_fila = i
         max_valor = abs(matriz_trabajo[i][i]) if i < len(matriz_trabajo) and i < len(matriz_trabajo[i]) else 0
@@ -99,9 +179,9 @@ def gauss_jordan(matriz, formato):
                 max_fila = k
                 max_valor = abs(matriz_trabajo[k][i])
         
-        # Si el máximo es cero, la matriz es singular
+        # Si el máximo es cero, continuar
         if max_valor < 1e-10:
-            print(f"\nPaso {paso}: El pivote es cero, la columna {i+1} se omite")
+            print(f"\nPaso {paso}: El pivote es cero, se omite la columna {i+1}")
             paso += 1
             continue
             
@@ -112,9 +192,9 @@ def gauss_jordan(matriz, formato):
             mostrar_matriz(matriz_trabajo, formato)
             paso += 1
         
-        # Normalización
+        # Normalización (hacer el pivote = 1)
         pivote = matriz_trabajo[i][i]
-        if abs(pivote) < 1e-10:  # Evitar división por cero
+        if abs(pivote) < 1e-10:
             continue
             
         for j in range(i, columnas):
@@ -124,7 +204,7 @@ def gauss_jordan(matriz, formato):
         mostrar_matriz(matriz_trabajo, formato)
         paso += 1
         
-        # Eliminación
+        # Eliminación completa (hacia arriba y hacia abajo)
         for k in range(filas):
             if k != i and abs(matriz_trabajo[k][i]) > 1e-10:
                 factor = matriz_trabajo[k][i]
@@ -135,7 +215,7 @@ def gauss_jordan(matriz, formato):
                 mostrar_matriz(matriz_trabajo, formato)
                 paso += 1
                 
-    # Limpiar valores muy pequeños (errores de redondeo)
+    # Limpiar valores muy pequeños
     for i in range(filas):
         for j in range(columnas):
             if abs(matriz_trabajo[i][j]) < 1e-10:
@@ -143,135 +223,254 @@ def gauss_jordan(matriz, formato):
                 
     return matriz_trabajo
 
-def metodo_euler(f, x0, y0, h, n, formato):
-    """Implementa el método de Euler para ecuaciones diferenciales"""
-    resultados = []
-    x = x0
-    y = y0
+def metodo_sustitucion(matriz, formato):
+    """Resuelve por sustitución (para sistemas 2x2 principalmente)"""
+    print("\n══════════════════════════════════════════")
+    print("  MÉTODO: SUSTITUCIÓN")
+    print("══════════════════════════════════════════")
     
-    print("\nMétodo de Euler:")
-    print(f"Condiciones iniciales: x₀ = {x0}, y₀ = {y0}")
-    print(f"Paso h = {h}, Número de iteraciones = {n}\n")
+    if len(matriz) != 2 or len(matriz[0]) != 3:
+        print("El método de sustitución está optimizado para sistemas 2x2")
+        print("Aplicando eliminación gaussiana...")
+        return eliminacion_gaussiana(matriz, formato)
     
-    try:
-        # Almacenar el punto inicial
-        resultados.append((x, y))
+    # Sistema 2x2: ax + by = e, cx + dy = f
+    a, b, e = matriz[0]
+    c, d, f = matriz[1]
+    
+    print(f"Sistema original:")
+    print(f"Ecuación 1: {a}x + {b}y = {e}")
+    print(f"Ecuación 2: {c}x + {d}y = {f}")
+    
+    # Resolver x en términos de y desde la primera ecuación
+    if abs(a) > 1e-10:
+        print(f"\nPaso 1: Despejar x de la primera ecuación")
+        print(f"x = ({e} - {b}y) / {a}")
+        print(f"x = {e/a} - {b/a}y")
         
-        # Realizar n iteraciones (no n+1 como estaba antes)
-        for i in range(n):
+        # Sustituir en la segunda ecuación
+        print(f"\nPaso 2: Sustituir en la segunda ecuación")
+        print(f"{c}({e/a} - {b/a}y) + {d}y = {f}")
+        
+        # Simplificar
+        coef_y = -c*b/a + d
+        termino_independiente = f - c*e/a
+        
+        print(f"{c*e/a} - {c*b/a}y + {d}y = {f}")
+        print(f"{coef_y}y = {termino_independiente}")
+        
+        if abs(coef_y) > 1e-10:
+            y = termino_independiente / coef_y
+            x = (e - b*y) / a
+            
+            print(f"\nPaso 3: Resolver para y")
+            print(f"y = {termino_independiente} / {coef_y} = {y}")
+            
+            print(f"\nPaso 4: Sustituir y calcular x")
+            print(f"x = ({e} - {b}*{y}) / {a} = {x}")
+            
             if formato == 2:
-                print(f"Iteración {i}: x = {x:.6f}, y = {Fraction(y).limit_denominator()}")
+                print(f"\nSOLUCIÓN:")
+                print(f"x = {Fraction(x).limit_denominator()}")
+                print(f"y = {Fraction(y).limit_denominator()}")
             else:
-                print(f"Iteración {i}: x = {x:.6f}, y = {y:.6f}")
-            
-            # Calcular la pendiente en el punto actual
-            try:
-                pendiente = f(x, y)
-            except Exception as e:
-                print(f"Error al evaluar la función en x={x}, y={y}: {str(e)}")
-                break
+                print(f"\nSOLUCIÓN:")
+                print(f"x = {x:.6f}")
+                print(f"y = {y:.6f}")
                 
-            # Actualizar y utilizando la pendiente
-            y_nuevo = y + h * pendiente
-            
-            # Actualizar x
-            x_nuevo = x + h
-            
-            # Actualizar valores para la siguiente iteración
-            x, y = x_nuevo, y_nuevo
-            
-            # Almacenar el nuevo punto
-            resultados.append((x, y))
-        
-        # Mostrar la última iteración
-        if formato == 2:
-            print(f"Iteración {n}: x = {x:.6f}, y = {Fraction(y).limit_denominator()}")
+            return [[1, 0, x], [0, 1, y]]
         else:
-            print(f"Iteración {n}: x = {x:.6f}, y = {y:.6f}")
-            
-    except Exception as e:
-        print(f"Error en el método de Euler: {str(e)}")
-    
-    return resultados
+            print("Sistema inconsistente o con infinitas soluciones")
+            return matriz
+    else:
+        print("No se puede despejar x de la primera ecuación, usando método alternativo...")
+        return eliminacion_gaussiana(matriz, formato)
 
-def resolver_sistema(matriz, formato):
-    """Resuelve un sistema de ecuaciones y muestra la solución"""
+def metodo_igualacion(matriz, formato):
+    """Resuelve por igualación (para sistemas 2x2 principalmente)"""
+    print("\n══════════════════════════════════════════")
+    print("  MÉTODO: IGUALACIÓN")
+    print("══════════════════════════════════════════")
+    
+    if len(matriz) != 2 or len(matriz[0]) != 3:
+        print("El método de igualación está optimizado para sistemas 2x2")
+        print("Aplicando eliminación gaussiana...")
+        return eliminacion_gaussiana(matriz, formato)
+    
+    # Sistema 2x2: ax + by = e, cx + dy = f
+    a, b, e = matriz[0]
+    c, d, f = matriz[1]
+    
+    print(f"Sistema original:")
+    print(f"Ecuación 1: {a}x + {b}y = {e}")
+    print(f"Ecuación 2: {c}x + {d}y = {f}")
+    
+    # Despejar x de ambas ecuaciones
+    if abs(a) > 1e-10 and abs(c) > 1e-10:
+        print(f"\nPaso 1: Despejar x de ambas ecuaciones")
+        print(f"De la ecuación 1: x = ({e} - {b}y) / {a}")
+        print(f"De la ecuación 2: x = ({f} - {d}y) / {c}")
+        
+        print(f"\nPaso 2: Igualar las expresiones")
+        print(f"({e} - {b}y) / {a} = ({f} - {d}y) / {c}")
+        
+        print(f"\nPaso 3: Resolver la ecuación resultante")
+        print(f"{c}({e} - {b}y) = {a}({f} - {d}y)")
+        print(f"{c*e} - {c*b}y = {a*f} - {a*d}y")
+        print(f"{c*e} - {a*f} = {c*b}y - {a*d}y")
+        print(f"{c*e - a*f} = {c*b - a*d}y")
+        
+        denominador_y = c*b - a*d
+        if abs(denominador_y) > 1e-10:
+            y = (c*e - a*f) / denominador_y
+            x = (e - b*y) / a
+            
+            print(f"y = {c*e - a*f} / {denominador_y} = {y}")
+            
+            print(f"\nPaso 4: Calcular x")
+            print(f"x = ({e} - {b}*{y}) / {a} = {x}")
+            
+            if formato == 2:
+                print(f"\nSOLUCIÓN:")
+                print(f"x = {Fraction(x).limit_denominator()}")
+                print(f"y = {Fraction(y).limit_denominator()}")
+            else:
+                print(f"\nSOLUCIÓN:")
+                print(f"x = {x:.6f}")
+                print(f"y = {y:.6f}")
+                
+            return [[1, 0, x], [0, 1, y]]
+        else:
+            print("Sistema inconsistente o con infinitas soluciones")
+            return matriz
+    else:
+        print("No se pueden despejar las variables, usando método alternativo...")
+        return eliminacion_gaussiana(matriz, formato)
+
+def resolver_sistema(matriz, metodo, formato):
+    """Resuelve un sistema de ecuaciones con el método seleccionado"""
     try:
         filas = len(matriz)
-        columnas = len(matriz[0]) - 1  # Excluyendo la columna de términos independientes
+        columnas = len(matriz[0]) - 1
         
-        # Resolver el sistema
-        resultado = gauss_jordan(matriz.copy(), formato)
+        # Mostrar sistema original
+        mostrar_ecuaciones(matriz)
+        mostrar_matriz(matriz, formato)
         
-        # Verificar si el sistema es inconsistente
-        for i in range(filas):
-            # Si toda una fila tiene coeficientes cero pero término independiente no cero
-            if all(abs(resultado[i][j]) < 1e-10 for j in range(columnas)) and abs(resultado[i][-1]) > 1e-10:
-                print("\n¡SISTEMA INCONSISTENTE! No existe solución.")
-                return
+        # Aplicar el método seleccionado
+        if metodo == 1:  # Eliminación Gaussiana
+            resultado = eliminacion_gaussiana(matriz.copy(), formato)
+        elif metodo == 2:  # Gauss-Jordan
+            resultado = gauss_jordan(matriz.copy(), formato)
+        elif metodo == 3:  # Sustitución
+            resultado = metodo_sustitucion(matriz.copy(), formato)
+        elif metodo == 4:  # Igualación
+            resultado = metodo_igualacion(matriz.copy(), formato)
         
-        # Verificar si el sistema tiene infinitas soluciones
-        libre_count = 0
-        for i in range(min(filas, columnas)):
-            if abs(resultado[i][i]) < 1e-10:
-                libre_count += 1
-        
-        if libre_count > 0:
-            print(f"\nEl sistema tiene infinitas soluciones con {libre_count} variable(s) libre(s).")
-        
-        # Mostrar solución
-        print("\n═══════════════════════════════════════")
-        print("SOLUCIÓN DEL SISTEMA:")
-        
-        # Crear un array para almacenar las soluciones
-        soluciones = [None] * columnas
-        
-        # Recorrer las filas de la matriz en forma escalonada
-        for i in range(min(filas, columnas)):
-            # Buscar la primera columna con un coeficiente no cero
-            pivote_col = -1
-            for j in range(columnas):
-                if abs(resultado[i][j]) > 1e-10:
-                    pivote_col = j
-                    break
-            
-            if pivote_col != -1:
-                # Esta variable está determinada
-                valor = resultado[i][-1]
-                if formato == 2:
-                    print(f"x_{pivote_col+1} = {Fraction(valor).limit_denominator()}")
-                else:
-                    print(f"x_{pivote_col+1} = {valor:.6f}")
-                soluciones[pivote_col] = valor
-        
-        # Verificar variables libres
-        for j in range(columnas):
-            if soluciones[j] is None:
-                print(f"x_{j+1} = Parámetro libre (puede tomar cualquier valor)")
+        # Para eliminación gaussiana, necesitamos sustitución hacia atrás
+        if metodo == 1:
+            print("\n══════════════════════════════════════════")
+            print("  SUSTITUCIÓN HACIA ATRÁS")
+            print("══════════════════════════════════════════")
+            soluciones = sustitucion_hacia_atras(resultado, formato)
+            mostrar_solucion_final(soluciones, formato)
+        elif metodo in [2, 3, 4]:
+            # Verificar consistencia y mostrar solución
+            verificar_y_mostrar_solucion(resultado, formato)
                 
     except Exception as e:
         print(f"\nError durante el cálculo: {str(e)}")
 
+def sustitucion_hacia_atras(matriz, formato):
+    """Realiza sustitución hacia atrás después de eliminación gaussiana"""
+    filas = len(matriz)
+    columnas = len(matriz[0]) - 1
+    soluciones = [0] * columnas
+    
+    # Empezar desde la última fila
+    for i in range(filas - 1, -1, -1):
+        # Encontrar la primera variable no cero
+        pivote_col = -1
+        for j in range(columnas):
+            if abs(matriz[i][j]) > 1e-10:
+                pivote_col = j
+                break
+        
+        if pivote_col == -1:
+            continue
+            
+        # Calcular el valor de la variable
+        suma = 0
+        for j in range(pivote_col + 1, columnas):
+            suma += matriz[i][j] * soluciones[j]
+        
+        soluciones[pivote_col] = (matriz[i][-1] - suma) / matriz[i][pivote_col]
+        
+        print(f"x{pivote_col+1} = ({matriz[i][-1]} - {suma}) / {matriz[i][pivote_col]} = {soluciones[pivote_col]}")
+    
+    return soluciones
+
+def verificar_y_mostrar_solucion(resultado, formato):
+    """Verifica la consistencia del sistema y muestra la solución"""
+    filas = len(resultado)
+    columnas = len(resultado[0]) - 1
+    
+    # Verificar inconsistencia
+    for i in range(filas):
+        if all(abs(resultado[i][j]) < 1e-10 for j in range(columnas)) and abs(resultado[i][-1]) > 1e-10:
+            print("\n¡SISTEMA INCONSISTENTE! No existe solución.")
+            return
+    
+    # Mostrar solución
+    print("\n═══════════════════════════════════════")
+    print("SOLUCIÓN DEL SISTEMA:")
+    
+    for i in range(min(filas, columnas)):
+        if abs(resultado[i][i]) > 1e-10:
+            valor = resultado[i][-1]
+            if formato == 2:
+                print(f"x_{i+1} = {Fraction(valor).limit_denominator()}")
+            else:
+                print(f"x_{i+1} = {valor:.6f}")
+
+def mostrar_solucion_final(soluciones, formato):
+    """Muestra la solución final del sistema"""
+    print("\n═══════════════════════════════════════")
+    print("SOLUCIÓN FINAL DEL SISTEMA:")
+    
+    for i, sol in enumerate(soluciones):
+        if formato == 2:
+            print(f"x_{i+1} = {Fraction(sol).limit_denominator()}")
+        else:
+            print(f"x_{i+1} = {sol:.6f}")
+
 def main():
     print("══════════════════════════════════════════════")
-    print("  SISTEMA AVANZADO DE RESOLUCIÓN MATEMÁTICA")
+    print("  SISTEMA DE RESOLUCIÓN DE ECUACIONES LINEALES")
     print("══════════════════════════════════════════════\n")
-    print("1. Resolver sistema de ecuaciones (Gauss-Jordan)")
-    print("2. Método de Euler para ecuaciones diferenciales")
-    print("3. Ejemplos de demostración")
-    print("4. Salir")
+    print("MÉTODOS DISPONIBLES:")
+    print("1. Eliminación Gaussiana")
+    print("2. Gauss-Jordan")
+    print("3. Sustitución")
+    print("4. Igualación")
+    print("5. Ejemplos de demostración")
+    print("6. Salir")
     
     while True:
         try:
-            opcion = int(input("\nSeleccione una opción (1-4): "))
-            if opcion not in [1, 2, 3, 4]:
+            opcion = int(input("\nSeleccione una opción (1-6): "))
+            if opcion not in [1, 2, 3, 4, 5, 6]:
                 raise ValueError
             break
         except:
-            print("Error: Ingrese un número entre 1 y 4.")
+            print("Error: Ingrese un número entre 1 y 6.")
     
-    if opcion == 4:
+    if opcion == 6:
         print("¡Gracias por usar el sistema!")
+        return
+    
+    if opcion == 5:
+        ejecutar_ejemplos()
         return
     
     # Selección de formato
@@ -287,226 +486,119 @@ def main():
         except:
             print("Error: Ingrese 1 (decimal) o 2 (fracción).")
     
-    if opcion == 1:
-        # Resolver sistema de ecuaciones
-        print("\n═══════════════════════════════════════")
-        print("  RESOLUCIÓN DE SISTEMAS DE ECUACIONES")
-        print("═══════════════════════════════════════\n")
-        
-        while True:
-            try:
-                filas = int(input("Número de ecuaciones (filas): "))
-                columnas = int(input("Número de variables (columnas): "))
-                if filas < 1 or columnas < 1:
-                    raise ValueError
-                break
-            except:
-                print("Error: Ingrese números enteros positivos.\n")
-        
-        # Ingreso de coeficientes
-        print("\nINGRESO DE COEFICIENTES:")
-        print("Ejemplos de formato aceptado:")
-        print("- Fracciones: 1/2, 3/4")
-        print("- Exponentes: 2^3, 5e^2")
-        print("- Raíces: √2, 3√8 (raíz cúbica de 8)")
-        print("- Factoriales: 5!, 3!")
-        print("- Logaritmos: log(10), ln(e)")
-        print("- Funciones trigonométricas: sin(π/2), cos(0)")
-        print("- Combinaciones: 2!3^4/6, (1/2)e^3, ln(π)+√4")
-        print("- Negativos y decimales: -3.14, 0.5")
-        
-        matriz_aumentada = []
-        for i in range(filas):
-            fila = []
-            # Ingresar coeficientes
-            while True:
-                try:
-                    entrada = input(f"\nCoeficientes ecuación {i+1} (separados por espacios): ")
-                    elementos = entrada.split()
-                    if len(elementos) != columnas:
-                        print(f"Error: Debe ingresar exactamente {columnas} coeficientes.")
-                        continue
-                    
-                    fila = [parse_expression(elem) for elem in elementos]
-                    break
-                except Exception as e:
-                    print(f"Error: {str(e)}. Intente nuevamente.")
-            
-            # Ingresar término independiente
-            while True:
-                try:
-                    valor = parse_expression(input(f"Término independiente ecuación {i+1}: "))
-                    fila.append(valor)
-                    break
-                except Exception as e:
-                    print(f"Error: {str(e)}. Intente nuevamente.")
-            
-            matriz_aumentada.append(fila)
-        
-        # Mostrar sistema original
-        print("\n═══════════════════════════════════════")
-        print("SISTEMA ORIGINAL:")
-        mostrar_matriz(matriz_aumentada, formato)
-        
-        # Resolver el sistema
-        resolver_sistema(matriz_aumentada, formato)
-    
-    elif opcion == 2:
-        # Método de Euler
-        print("\n═══════════════════════════════════════")
-        print("  MÉTODO DE EULER PARA EDOS")
-        print("═══════════════════════════════════════\n")
-        
-        print("La ecuación diferencial debe estar en forma dy/dx = f(x, y)")
-        print("Ejemplos aceptados:")
-        print("- Para dy/dx = x + y, ingrese 'x + y'")
-        print("- Para dy/dx = x*y + sin(x), ingrese 'x*y + sin(x)'")
-        print("- Para dy/dx = e^x - ln(y), ingrese 'exp(x) - log(y)'")
-        print("- Para dy/dx = √(x²+y²), ingrese 'sqrt(x**2 + y**2)'")
-        
-        while True:
-            try:
-                expr = input("\nIngrese f(x, y): ")
-                x, y = sp.symbols('x y')
-                f_expr = sp.sympify(expr)
-                
-                # Verificar que la expresión contiene variables válidas
-                variables = [str(var) for var in f_expr.free_symbols]
-                if not all(var in ['x', 'y'] for var in variables):
-                    print("Error: La expresión solo debe contener las variables x e y.")
-                    continue
-                
-                # Crear una función lambda segura
-                def f_segura(x_val, y_val):
-                    try:
-                        return float(f_expr.subs({'x': x_val, 'y': y_val}))
-                    except Exception as e:
-                        raise ValueError(f"Error al evaluar f({x_val}, {y_val}): {str(e)}")
-                
-                # Verificar que la función es evaluable
-                test_val = f_segura(0, 0)
-                if not isinstance(test_val, (int, float)) or math.isnan(test_val) or math.isinf(test_val):
-                    print("Error: La función no produce un resultado numérico válido.")
-                    continue
-                
-                break
-            except Exception as e:
-                print(f"Error: Expresión no válida. {str(e)}")
-        
-        while True:
-            try:
-                x0 = float(input("Valor inicial x0: "))
-                y0 = float(input("Valor inicial y0: "))
-                h = float(input("Tamaño de paso h: "))
-                if h <= 0:
-                    print("Error: El tamaño de paso debe ser positivo.")
-                    continue
-                    
-                n = int(input("Número de iteraciones: "))
-                if n < 1:
-                    print("Error: El número de iteraciones debe ser al menos 1.")
-                    continue
-                    
-                break
-            except Exception as e:
-                print(f"Error: Ingrese valores numéricos válidos. {str(e)}")
-        
-        resultados = metodo_euler(f_segura, x0, y0, h, n, formato)
-        
-        if resultados:
-            print("\nRESULTADOS FINALES:")
-            for i, (x, y) in enumerate(resultados):
-                if formato == 2:
-                    print(f"Punto {i}: x = {x:.6f}, y ≈ {Fraction(y).limit_denominator()}")
-                else:
-                    print(f"Punto {i}: x = {x:.6f}, y ≈ {y:.6f}")
-    
-    elif opcion == 3:
-        # Ejecutar ejemplos de demostración
-        ejecutar_ejemplos()
-
-def ejecutar_ejemplo_sistema():
-    """Ejecuta un ejemplo de sistema de ecuaciones complejo"""
+    # Ingreso del sistema
     print("\n═══════════════════════════════════════")
-    print("  EJEMPLO: SISTEMA DE ECUACIONES COMPLEJAS")
+    print("  INGRESO DEL SISTEMA DE ECUACIONES")
     print("═══════════════════════════════════════\n")
     
-    print("Resolviendo el siguiente sistema de ecuaciones:")
-    print("1. 2.5x + √2y - 3z = π")
-    print("2. -x + 3/4y + 1.2z = e^1.1")
-    print("3. 5!/(10)x - ln(2)y + z = 2^3 - 1")
+    while True:
+        try:
+            filas = int(input("Número de ecuaciones: "))
+            columnas = int(input("Número de variables: "))
+            if filas < 1 or columnas < 1:
+                raise ValueError
+            break
+        except:
+            print("Error: Ingrese números enteros positivos.\n")
     
-    # Crear la matriz aumentada
-    matriz = [
-        [2.5, math.sqrt(2), -3, math.pi],
-        [-1, 3/4, 1.2, math.exp(1.1)],
-        [math.factorial(5)/10, -math.log(2), 1, math.pow(2, 3) - 1]
-    ]
+    # Ingreso de coeficientes
+    print("\nINGRESO DE COEFICIENTES:")
+    print("Ejemplos de formato aceptado:")
+    print("- Números: 2, -3.5, 0")
+    print("- Fracciones: 1/2, 3/4")
+    print("- Exponentes: 2^3, 5^2")
+    print("- Raíces: √2, 3√8")
+    print("- Constantes: π, e")
     
-    print("\nMatriz aumentada del sistema:")
-    mostrar_matriz(matriz, 1)  # Mostrar en formato decimal
-    
-    print("\nResolviendo por el método de Gauss-Jordan...")
-    resultado = gauss_jordan(matriz.copy(), 1)
-    
-    print("\n═══════════════════════════════════════")
-    print("SOLUCIÓN DEL SISTEMA DE EJEMPLO:")
-    for i in range(3):
-        print(f"x_{i+1} = {resultado[i][3]:.6f}")
+    matriz_aumentada = []
+    for i in range(filas):
+        fila = []
+        # Ingresar coeficientes
+        while True:
+            try:
+                entrada = input(f"\nCoeficientes ecuación {i+1} (separados por espacios): ")
+                elementos = entrada.split()
+                if len(elementos) != columnas:
+                    print(f"Error: Debe ingresar exactamente {columnas} coeficientes.")
+                    continue
+                
+                fila = [parse_expression(elem) for elem in elementos]
+                break
+            except Exception as e:
+                print(f"Error: {str(e)}. Intente nuevamente.")
         
-    print("\nLa misma solución en formato fraccionario:")
-    for i in range(3):
-        print(f"x_{i+1} ≈ {Fraction(resultado[i][3]).limit_denominator()}")
-
-def ejecutar_ejemplo_euler():
-    """Ejecuta un ejemplo del método de Euler con una EDO compleja"""
-    print("\n═══════════════════════════════════════")
-    print("  EJEMPLO: MÉTODO DE EULER CON EDO COMPLEJA")
-    print("═══════════════════════════════════════\n")
+        # Ingresar término independiente
+        while True:
+            try:
+                valor = parse_expression(input(f"Término independiente ecuación {i+1}: "))
+                fila.append(valor)
+                break
+            except Exception as e:
+                print(f"Error: {str(e)}. Intente nuevamente.")
+        
+        matriz_aumentada.append(fila)
     
-    print("Resolviendo la EDO: dy/dx = sin(x) + ln(y+1) - √(x²)")
-    print("Condiciones: x₀ = 0, y₀ = 1, h = 0.1, n = 10")
-    
-    # Definir la función diferencial
-    def f(x, y):
-        return math.sin(x) + math.log(y+1) - math.sqrt(x**2)
-    
-    # Ejecutar el método de Euler
-    resultados = metodo_euler(f, 0, 1, 0.1, 10, 1)
-    
-    print("\nRESULTADOS FINALES:")
-    for i, (x, y) in enumerate(resultados):
-        print(f"Punto {i}: x = {x:.6f}, y ≈ {y:.6f}")
-    
-    print("\nLa misma solución en formato fraccionario:")
-    for i, (x, y) in enumerate(resultados):
-        print(f"Punto {i}: x = {x:.6f}, y ≈ {Fraction(y).limit_denominator()}")
+    # Resolver el sistema
+    resolver_sistema(matriz_aumentada, opcion, formato)
 
 def ejecutar_ejemplos():
-    """Ejecuta ejemplos demostrativos del programa"""
+    """Ejecuta ejemplos demostrativos con diferentes métodos"""
     print("\n═══════════════════════════════════════")
     print("  EJEMPLOS DE DEMOSTRACIÓN")
     print("═══════════════════════════════════════\n")
     
-    print("1. Sistema de ecuaciones complejas")
-    print("2. Método de Euler con EDO compleja")
-    print("3. Volver al menú principal")
+    print("1. Sistema 2x2 - Todos los métodos")
+    print("2. Sistema 3x3 - Eliminación Gaussiana")
+    print("3. Sistema 3x3 - Gauss-Jordan")
+    print("4. Volver al menú principal")
     
     while True:
         try:
-            sub_opcion = int(input("\nSeleccione un ejemplo (1-3): "))
-            if sub_opcion not in [1, 2, 3]:
+            sub_opcion = int(input("\nSeleccione un ejemplo (1-4): "))
+            if sub_opcion not in [1, 2, 3, 4]:
                 raise ValueError
             break
         except:
-            print("Error: Ingrese 1, 2 o 3.")
+            print("Error: Ingrese 1, 2, 3 o 4.")
+    
+    if sub_opcion == 4:
+        return
     
     if sub_opcion == 1:
-        ejecutar_ejemplo_sistema()
+        # Sistema 2x2
+        print("\nEjemplo: Sistema 2x2")
+        print("2x + 3y = 7")
+        print("x - y = 1")
+        
+        matriz = [[2, 3, 7], [1, -1, 1]]
+        
+        for metodo in range(1, 5):
+            metodos = ["", "Eliminación Gaussiana", "Gauss-Jordan", "Sustitución", "Igualación"]
+            print(f"\n{'='*50}")
+            print(f"RESOLVIENDO CON: {metodos[metodo]}")
+            print(f"{'='*50}")
+            resolver_sistema([fila[:] for fila in matriz], metodo, 1)
+            input("\nPresione Enter para continuar...")
+    
     elif sub_opcion == 2:
-        ejecutar_ejemplo_euler()
+        # Sistema 3x3 - Eliminación Gaussiana
+        print("\nEjemplo: Sistema 3x3 con Eliminación Gaussiana")
+        print("2x + y - z = 8")
+        print("-3x - y + 2z = -11")
+        print("-2x + y + 2z = -3")
+        
+        matriz = [[2, 1, -1, 8], [-3, -1, 2, -11], [-2, 1, 2, -3]]
+        resolver_sistema(matriz, 1, 1)
+    
     elif sub_opcion == 3:
-        return
+        # Sistema 3x3 - Gauss-Jordan
+        print("\nEjemplo: Sistema 3x3 con Gauss-Jordan")
+        print("x + 2y + 3z = 6")
+        print("2x + 3y + z = 7")
+        print("3x + y + 2z = 8")
+        
+        matriz = [[1, 2, 3, 6], [2, 3, 1, 7], [3, 1, 2, 8]]
+        resolver_sistema(matriz, 2, 2)
     
     input("\nPresione Enter para continuar...")
 
