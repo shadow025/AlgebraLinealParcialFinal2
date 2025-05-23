@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resolvedor de Ecuaciones Lineales</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 15px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        label {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        input, select, button {
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.2);
+        }
+        
+        button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .matriz-container {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(118, 75, 162, 0.1);
+            border-radius: 15px;
+            overflow-x: auto;
+        }
+        
+        .matriz-grid {
+            display: grid;
+            gap: 5px;
+            margin: 20px 0;
+            justify-items: center;
+            min-width: max-content;
+        }
+        
+        .matriz-input {
+            width: 70px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 14px;
+            padding: 8px;
+        }
+        
+        .equals {
+            display: flex;
+            align-items: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .results {
+            margin-top: 30px;
+        }
+        
+        .step {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #ddd;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .step:hover {
+            transform: translateY(-2px);
+        }
+        
+        .step-title {
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+        
+        .matriz-display {
+            font-family: 'Courier New', monospace;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            overflow-x: auto;
+            border-left: 4px solid #667eea;
+        }
+        
+        .matriz-display table {
+            margin: 0 auto;
+            border-collapse: separate;
+            border-spacing: 5px;
+        }
+        
+        .matriz-display td {
+            padding: 5px 8px;
+            text-align: center;
+            background: white;
+            border-radius: 5px;
+            min-width: 60px;
+            font-weight: 600;
+            font-size: 12px;
+        }
+        
+        .explicacion {
+            background: rgba(102, 126, 234, 0.1);
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-style: italic;
+            color: #333;
+        }
+        
+        .soluciones {
+            background: linear-gradient(45deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+            border: 2px solid #667eea;
+        }
+        
+        .soluciones h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .solucion-item {
+            background: white;
+            padding: 10px 15px;
+            margin: 8px 0;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            text-align: center;
+        }
+        
+        .error {
+            background: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+            border: 1px solid #dc3545;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+        }
+        
+        .ejemplos {
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .ejemplo-btn {
+            background: rgba(102, 126, 234, 0.2);
+            color: #333;
+            margin: 5px;
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+        
+        .ejemplo-btn:hover {
+            background: rgba(102, 126, 234, 0.3);
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .controls {
+                grid-template-columns: 1fr;
+            }
+            
+            .matriz-input {
+                width: 50px;
+                font-size: 12px;
+            }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .warning {
+            background: rgba(255, 193, 7, 0.2);
+            color: #856404;
+            border: 1px solid #ffc107;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧮 Resolvedor de Ecuaciones Lineales</h1>
+        
+        <div class="controls">
+            <div class="form-group">
+                <label for="filas">Número de ecuaciones:</label>
+                <input type="number" id="filas" min="2" max="15" value="2">
+            </div>
+            
+            <div class="form-group">
+                <label for="columnas">Número de variables:</label>
+                <input type="number" id="columnas" min="2" max="15" value="2">
+            </div>
+            
+            <div class="form-group">
+                <label for="metodo">Método de resolución:</label>
+                <select id="metodo">
+                    <option value="gaussiana">Eliminación Gaussiana</option>
+                    <option value="gauss_jordan">Gauss-Jordan</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="formato">Formato de resultados:</label>
+                <select id="formato">
+                    <option value="decimal">Decimal</option>
+                    <option value="fraccion">Fracción</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="ejemplos">
+            <button class="ejemplo-btn" onclick="cargarEjemplo1()">Ejemplo 2x2</button>
+            <button class="ejemplo-btn" onclick="cargarEjemplo2()">Ejemplo 3x3</button>
+            <button class="ejemplo-btn" onclick="cargarEjemplo3()">Ejemplo 4x4</button>
+            <button class="ejemplo-btn" onclick="limpiarMatriz()">Limpiar</button>
+        </div>
+        
+        <div class="matriz-container">
+            <h3 style="text-align: center; color: #333; margin-bottom: 20px;">
+                📝 Ingrese los coeficientes del sistema
+            </h3>
+            <p style="text-align: center; color: #666; margin-bottom: 20px;">
+                Formatos aceptados: números enteros, decimales y fracciones (ej: 1/2, 3.5, -2)
+            </p>
+            <div class="warning" id="size-warning" style="display: none;">
+                ⚠️ Matrices grandes (>8x8) pueden tardar más tiempo en procesarse
+            </div>
+            <div id="matriz-grid" class="matriz-grid"></div>
+            <div style="text-align: center; margin-top: 20px;">
+                <button onclick="generarMatriz()">🔄 Actualizar Matriz</button>
+                <button onclick="resolverSistema()" id="resolver-btn">🚀 Resolver Sistema</button>
+            </div>
+        </div>
+        
+        <div id="results" class="results"></div>
+    </div>
+
+    <script>
+        // Función para parsear expresiones matemáticas
+        function parseExpression(expr) {
+            try {
+                expr = String(expr).trim();
+                if (!expr) return 0;
+                
+                // Manejar fracciones simples
+                if (expr.includes('/') && !expr.includes(' ') && !expr.includes('+') && !expr.includes('-') && expr.indexOf('-') !== 0) {
+                    const parts = expr.split('/');
+                    if (parts.length === 2) {
+                        const num = parseFloat(parts[0]);
+                        const den = parseFloat(parts[1]);
+                        if (!isNaN(num) && !isNaN(den) && den !== 0) {
+                            return num / den;
+                        }
+                    }
+                }
+                
+                // Evaluar expresiones matemáticas básicas
+                const result = Function('"use strict"; return (' + expr + ')')();
+                return isNaN(result) ? 0 : result;
+            } catch {
+                return 0;
+            }
+        }
+
+        // Función para convertir número a fracción
+        function toFraction(decimal, maxDenominator = 1000) {
+            if (Math.abs(decimal) < 1e-10) return "0";
+            
+            const sign = decimal < 0 ? "-" : "";
+            decimal = Math.abs(decimal);
+            
+            if (Math.abs(decimal - Math.round(decimal)) < 1e-10) {
+                return sign + Math.round(decimal);
+            }
+            
+            let bestNum = 1, bestDen = 1, bestError = Math.abs(decimal - 1);
+            
+            for (let denominator = 2; denominator <= maxDenominator; denominator++) {
+                const numerator = Math.round(decimal * denominator);
+                const error = Math.abs(decimal - numerator / denominator);
+                
+                if (error < bestError) {
+                    bestNum = numerator;
+                    bestDen = denominator;
+                    bestError = error;
+                    
+                    if (error < 1e-10) break;
+                }
+            }
+            
+            // Simplificar fracción
+            const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
+            const divisor = gcd(bestNum, bestDen);
+            bestNum /= divisor;
+            bestDen /= divisor;
+            
+            return bestDen === 1 ? sign + bestNum : sign + bestNum + "/" + bestDen;
+        }
+
+        function generarMatriz() {
+            const filas = parseInt(document.getElementById('filas').value);
+            const columnas = parseInt(document.getElementById('columnas').value);
+            const container = document.getElementById('matriz-grid');
+            const warning = document.getElementById('size-warning');
+            
+            if (filas < 2 || filas > 15 || columnas < 2 || columnas > 15) {
+                alert('Las dimensiones deben estar entre 2 y 15');
+                return;
+            }
+            
+            // Mostrar advertencia para matrices grandes
+            if (filas > 8 || columnas > 8) {
+                warning.style.display = 'block';
+            } else {
+                warning.style.display = 'none';
+            }
+            
+            container.innerHTML = '';
+            container.style.gridTemplateColumns = `repeat(${columnas + 2}, auto)`;
+            
+            for (let i = 0; i < filas; i++) {
+                // Coeficientes
+                for (let j = 0; j < columnas; j++) {
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.className = 'matriz-input';
+                    input.placeholder = `a${i+1}${j+1}`;
+                    input.id = `coef_${i}_${j}`;
+                    container.appendChild(input);
+                }
+                
+                // Signo igual
+                const igual = document.createElement('div');
+                igual.className = 'equals';
+                igual.textContent = '=';
+                container.appendChild(igual);
+                
+                // Término independiente
+                const inputB = document.createElement('input');
+                inputB.type = 'text';
+                inputB.className = 'matriz-input';
+                inputB.placeholder = `b${i+1}`;
+                inputB.id = `term_${i}`;
+                container.appendChild(inputB);
+            }
+        }
+        
+        function cargarEjemplo1() {
+            document.getElementById('filas').value = 2;
+            document.getElementById('columnas').value = 2;
+            generarMatriz();
+            
+            // Sistema: 2x + 3y = 7, x - y = 1
+            document.getElementById('coef_0_0').value = '2';
+            document.getElementById('coef_0_1').value = '3';
+            document.getElementById('term_0').value = '7';
+            document.getElementById('coef_1_0').value = '1';
+            document.getElementById('coef_1_1').value = '-1';
+            document.getElementById('term_1').value = '1';
+        }
+        
+        function cargarEjemplo2() {
+            document.getElementById('filas').value = 3;
+            document.getElementById('columnas').value = 3;
+            generarMatriz();
+            
+            // Sistema: x + 2y + 3z = 6, 2x + 3y + z = 7, 3x + y + 2z = 8
+            document.getElementById('coef_0_0').value = '1';
+            document.getElementById('coef_0_1').value = '2';
+            document.getElementById('coef_0_2').value = '3';
+            document.getElementById('term_0').value = '6';
+            document.getElementById('coef_1_0').value = '2';
+            document.getElementById('coef_1_1').value = '3';
+            document.getElementById('coef_1_2').value = '1';
+            document.getElementById('term_1').value = '7';
+            document.getElementById('coef_2_0').value = '3';
+            document.getElementById('coef_2_1').value = '1';
+            document.getElementById('coef_2_2').value = '2';
+            document.getElementById('term_2').value = '8';
+        }
+
+        function cargarEjemplo3() {
+            document.getElementById('filas').value = 4;
+            document.getElementById('columnas').value = 4;
+            generarMatriz();
+            
+            // Sistema 4x4
+            const valores = [
+                ['2', '1', '3', '1', '11'],
+                ['1', '3', '1', '2', '13'],
+                ['3', '1', '2', '1', '11'],
+                ['1', '2', '1', '3', '12']
+            ];
+            
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < 4; j++) {
+                    document.getElementById(`coef_${i}_${j}`).value = valores[i][j];
+                }
+                document.getElementById(`term_${i}`).value = valores[i][4];
+            }
+        }
+        
+        function limpiarMatriz() {
+            const inputs = document.querySelectorAll('.matriz-input');
+            inputs.forEach(input => input.value = '');
+        }
+        
+        function recogerMatriz() {
+            const filas = parseInt(document.getElementById('filas').value);
+            const columnas = parseInt(document.getElementById('columnas').value);
+            const matriz = [];
+            
+            for (let i = 0; i < filas; i++) {
+                const fila = [];
+                
+                // Coeficientes
+                for (let j = 0; j < columnas; j++) {
+                    const valor = document.getElementById(`coef_${i}_${j}`).value || '0';
+                    fila.push(parseExpression(valor));
+                }
+                
+                // Término independiente
+                const termino = document.getElementById(`term_${i}`).value || '0';
+                fila.push(parseExpression(termino));
+                
+                matriz.push(fila);
+            }
+            
+            return matriz;
+        }
+        
+        function mostrarMatriz(matriz) {
+            if (!matriz || matriz.length === 0) return '';
+            
+            let html = '<table>';
+            for (let fila of matriz) {
+                html += '<tr>';
+                for (let elemento of fila) {
+                    const valor = typeof elemento === 'number' ? 
+                        (Math.abs(elemento) < 1e-10 ? '0' : elemento.toFixed(6).replace(/\.?0+$/, '')) : 
+                        elemento;
+                    html += `<td>${valor}</td>`;
+                }
+                html += '</tr>';
+            }
+            html += '</table>';
+            
+            return html;
+        }
+        
+        function eliminacionGaussiana(matriz, formato) {
+            const filas = matriz.length;
+            const columnas = matriz[0].length;
+            const pasos = [];
+            
+            // Copia de trabajo
+            const matrizTrabajo = matriz.map(fila => [...fila]);
+            
+            pasos.push({
+                titulo: 'ELIMINACIÓN GAUSSIANA - Matriz inicial',
+                matriz: matrizTrabajo.map(fila => [...fila]),
+                explicacion: 'Sistema de ecuaciones en forma de matriz aumentada'
+            });
+            
+            let pasoNum = 1;
+            
+            // Fase de eliminación hacia adelante
+            for (let i = 0; i < Math.min(filas, columnas - 1); i++) {
+                // Pivoteo parcial
+                let maxFila = i;
+                let maxValor = Math.abs(matrizTrabajo[i][i]);
+                
+                for (let k = i + 1; k < filas; k++) {
+                    if (Math.abs(matrizTrabajo[k][i]) > maxValor) {
+                        maxFila = k;
+                        maxValor = Math.abs(matrizTrabajo[k][i]);
+                    }
+                }
+                
+                if (maxValor < 1e-10) continue;
+                
+                // Intercambiar filas si es necesario
+                if (maxFila !== i) {
+                    [matrizTrabajo[i], matrizTrabajo[maxFila]] = [matrizTrabajo[maxFila], matrizTrabajo[i]];
+                    pasos.push({
+                        titulo: `Paso ${pasoNum}: Intercambio de filas`,
+                        matriz: matrizTrabajo.map(fila => [...fila]),
+                        explicacion: `F${i+1} ↔ F${maxFila+1}`
+                    });
+                    pasoNum++;
+                }
+                
+                // Eliminación hacia abajo
+                for (let k = i + 1; k < filas; k++) {
+                    if (Math.abs(matrizTrabajo[k][i]) > 1e-10) {
+                        const factor = matrizTrabajo[k][i] / matrizTrabajo[i][i];
+                        for (let j = i; j < columnas; j++) {
+                            matrizTrabajo[k][j] -= factor * matrizTrabajo[i][j];
+                        }
+                        
+                        const factorStr = formato === 'fraccion' ? toFraction(factor) : factor.toFixed(4);
+                        pasos.push({
+                            titulo: `Paso ${pasoNum}: Eliminación`,
+                            matriz: matrizTrabajo.map(fila => [...fila]),
+                            explicacion: `F${k+1} = F${k+1} - (${factorStr}) × F${i+1}`
+                        });
+                        pasoNum++;
+                    }
+                }
+            }
+            
+            // Sustitución hacia atrás
+            const soluciones = sustitucionHaciaAtras(matrizTrabajo, formato, pasos, pasoNum);
+            
+            return { matrizFinal: matrizTrabajo, pasos, soluciones };
+        }
+        
+        function gaussJordan(matriz, formato) {
+            const filas = matriz.length;
+            const columnas = matriz[0].length;
+            const pasos = [];
+            
+            const matrizTrabajo = matriz.map(fila => [...fila]);
+            
+            pasos.push({
+                titulo: 'GAUSS-JORDAN - Matriz inicial',
+                matriz: matrizTrabajo.map(fila => [...fila]),
+                explicacion: 'Sistema de ecuaciones en forma de matriz aumentada'
+            });
+            
+            let pasoNum = 1;
+            
+            for (let i = 0; i < Math.min(filas, columnas - 1); i++) {
+                // Pivoteo parcial
+                let maxFila = i;
+                let maxValor = Math.abs(matrizTrabajo[i][i]);
+                
+                for (let k = i + 1; k < filas; k++) {
+                    if (Math.abs(matrizTrabajo[k][i]) > maxValor) {
+                        maxFila = k;
+                        maxValor = Math.abs(matrizTrabajo[k][i]);
+                    }
+                }
+                
+                if (maxValor < 1e-10) continue;
+                
+                // Intercambiar filas
+                if (maxFila !== i) {
+                    [matrizTrabajo[i], matrizTrabajo[maxFila]] = [matrizTrabajo[maxFila], matrizTrabajo[i]];
+                    pasos.push({
+                        titulo: `Paso ${pasoNum}: Intercambio`,
+                        matriz: matrizTrabajo.map(fila => [...fila]),
+                        explicacion: `F${i+1} ↔ F${maxFila+1}`
+                    });
+                    pasoNum++;
+                }
+                
+                // Normalización
+                const pivote = matrizTrabajo[i][i];
+                if (Math.abs(pivote) > 1e-10) {
+                    for (let j = i; j < columnas; j++) {
+                        matrizTrabajo[i][j] /= pivote;
+                    }
+                    
+                    const pivoteStr = formato === 'fraccion' ? toFraction(pivote) : pivote.toFixed(4);
+                    pasos.push({
+                        titulo: `Paso ${pasoNum}: Normalización`,
+                        matriz: matrizTrabajo.map(fila => [...fila]),
+                        explicacion: `F${i+1} = F${i+1} ÷ ${pivoteStr}`
+                    });
+                    pasoNum++;
+                    
+                    // Eliminación completa
+                    for (let k = 0; k < filas; k++) {
+                        if (k !== i && Math.abs(matrizTrabajo[k][i]) > 1e-10) {
+                            const factor = matrizTrabajo[k][i];
+                            for (let j = i; j < columnas; j++) {
+                                matrizTrabajo[k][j] -= factor * matrizTrabajo[i][j];
+                            }
+                            
+                            const factorStr = formato === 'fraccion' ? toFraction(factor) : factor.toFixed(4);
+                            pasos.push({
+                                titulo: `Paso ${pasoNum}: Eliminación`,
+                                matriz: matrizTrabajo.map(fila => [...fila]),
+                                explicacion: `F${k+1} = F${k+1} - (${factorStr}) × F${i+1}`
+                            });
+                            pasoNum++;
+                        }
+                    }
+                }
+            }
+            
+            // Limpiar valores muy pequeños
+            for (let i = 0; i < filas; i++) {
+                for (let j = 0; j < columnas; j++) {
+                    if (Math.abs(matrizTrabajo[i][j]) < 1e-10) {
+                        matrizTrabajo[i][j] = 0;
+                    }
+                }
+            }
+            
+            // Extraer soluciones
+            const soluciones = [];
+            for (let i = 0; i < Math.min(filas, columnas - 1); i++) {
+                if (Math.abs(matrizTrabajo[i][i]) > 1e-10) {
+                    const valor = matrizTrabajo[i][columnas - 1];
+                    if (formato === 'fraccion') {
+                        soluciones.push(`x${i+1} = ${toFraction(valor)}`);
+                    } else {
+                        soluciones.push(`x${i+1} = ${valor.toFixed(6).replace(/\.?0+$/, '')}`);
+                    }
+                }
+            }
+            
+            return { matrizFinal: matrizTrabajo, pasos, soluciones };
+        }
+        
+        function sustitucionHaciaAtras(matriz, formato, pasos, pasoNum) {
+            const filas = matriz.length;
+            const columnas = matriz[0].length - 1;
+            const soluciones = new Array(columnas).fill(0);
+            const pasosSustitucion = [];
+            
+            for (let i = filas - 1; i >= 0; i--) {
+                let pivoteCol = -1;
+                for (let j = 0; j < columnas; j++) {
+                    if (Math.abs(matriz[i][j]) > 1e-10) {
+                        pivoteCol = j;
+                        break;
+                    }
+                }
+                
+                if (pivoteCol === -1) continue;
+                
+                let suma = 0;
+                for (let j = pivoteCol + 1; j < columnas; j++) {
+                    suma += matriz[i][j] * soluciones[j];
+                }
+                
+                if (Math.abs(matriz[i][pivoteCol]) > 1e-10) {
+                    soluciones[pivoteCol] = (matriz[i][columnas] - suma) / matriz[i][pivoteCol];
+                    
+                    if (formato === 'fraccion') {
+                        pasosSustitucion.push(`x${pivoteCol+1} = ${toFraction(soluciones[pivoteCol])}`);
+                    } else {
+                        pasosSustitucion.push(`x${pivoteCol+1} = ${soluciones[pivoteCol].toFixed(6).replace(/\.?0+$/, '')}`);
+                    }
+                }
+            }
+            
+            pasos.push({
+                titulo: `Paso ${pasoNum}: Sustitución hacia atrás`,
+                matriz: null,
+                explicacion: 'Soluciones: ' + pasosSustitucion.join(', ')
+            });
+            
+            return pasosSustitucion;
+        }
+        
+        function resolverSistema() {
+            const matriz = recogerMatriz();
+            const metodo = document.getElementById('metodo').value;
+            const formato = document.getElementById('formato').value;
+            const resultsDiv = document.getElementById('results');
+            const btn = document.getElementById('resolver-btn');
+            
+            // Validar matriz
+            let valida = true;
+            for (let fila of matriz) {
+                for (let elemento of fila) {
+                    if (isNaN(elemento)) {
+                        validavalida = false;
+                        break;
+                    }
+                }
+                if (!valida) break;
+            }
+            
+            if (!valida) {
+                resultsDiv.innerHTML = '<div class="error">❌ Error: La matriz contiene valores no válidos</div>';
+                return;
+            }
+            
+            // Verificar si la matriz es válida para resolver
+            const filas = matriz.length;
+            const columnas = matriz[0].length - 1;
+            
+            if (filas !== columnas) {
+                resultsDiv.innerHTML = '<div class="error">⚠️ Advertencia: El sistema no es cuadrado. Puede tener infinitas soluciones o no tener solución.</div>';
+            }
+            
+            btn.disabled = true;
+            btn.textContent = '⏳ Resolviendo...';
+            resultsDiv.innerHTML = '<div class="loading">🔄 Procesando sistema de ecuaciones...</div>';
+            
+            setTimeout(() => {
+                try {
+                    let resultado;
+                    
+                    if (metodo === 'gaussiana') {
+                        resultado = eliminacionGaussiana(matriz, formato);
+                    } else {
+                        resultado = gaussJordan(matriz, formato);
+                    }
+                    
+                    // Mostrar resultados
+                    let html = '<div class="fade-in">';
+                    
+                    // Mostrar pasos
+                    resultado.pasos.forEach(paso => {
+                        html += `<div class="step">
+                            <div class="step-title">${paso.titulo}</div>`;
+                        
+                        if (paso.matriz) {
+                            html += `<div class="matriz-display">${mostrarMatriz(paso.matriz)}</div>`;
+                        }
+                        
+                        if (paso.explicacion) {
+                            html += `<div class="explicacion">${paso.explicacion}</div>`;
+                        }
+                        
+                        html += '</div>';
+                    });
+                    
+                    // Mostrar soluciones finales
+                    if (resultado.soluciones && resultado.soluciones.length > 0) {
+                        html += `<div class="soluciones">
+                            <h3>🎯 Soluciones del Sistema</h3>`;
+                        
+                        resultado.soluciones.forEach(solucion => {
+                            html += `<div class="solucion-item">${solucion}</div>`;
+                        });
+                        
+                        html += `</div>`;
+                        
+                        // Verificación de la solución
+                    } else {
+                        html += '<div class="error">❌ No se pudo encontrar una solución única para el sistema</div>';
+                    }
+                    
+                    html += '</div>';
+                    resultsDiv.innerHTML = html;
+                    
+                } catch (error) {
+                    resultsDiv.innerHTML = `<div class="error">❌ Error al resolver el sistema: ${error.message}</div>`;
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = '🚀 Resolver Sistema';
+                }
+            }, 500);
+        }
+        
+        function verificarSolucion(matrizOriginal, soluciones, formato) {
+            try {
+                const filas = matrizOriginal.length;
+                const columnas = matrizOriginal[0].length - 1;
+                const valores = [];
+                
+                // Extraer valores numéricos de las soluciones
+                soluciones.forEach(solucion => {
+                    const match = solucion.match(/x(\d+)\s*=\s*(.+)/);
+                    if (match) {
+                        const indice = parseInt(match[1]) - 1; // Convertir x1, x2... a índices 0, 1...
+                        const valorStr = match[2].trim();
+                        if (valorStr.includes('/')) {
+                            const [num, den] = valorStr.split('/');
+                            valores[indice] = parseFloat(num) / parseFloat(den);
+                        } else {
+                            valores[indice] = parseFloat(valorStr);
+                        }
+                    }
+                });
+                
+                if (valores.length !== columnas) return '';
+                
+                let html = `<div class="step">
+                    <div class="step-title">🔍 Verificación de la Solución</div>
+                    <div class="explicacion">Sustituyendo los valores encontrados en las ecuaciones originales:</div>`;
+                
+                let todoCorrecto = true;
+                
+                for (let i = 0; i < filas; i++) {
+                    let suma = 0;
+                    let ecuacion = '';
+                    
+                    for (let j = 0; j < columnas; j++) {
+                    const coef = matrizOriginal[i][j];
+                    const valor = valores[j];
+                    suma += coef * valor;
+                    
+                    if (j > 0) {
+                        ecuacion += coef >= 0 ? ' + ' : ' ';
+                    }
+                    
+                    if (formato === 'fraccion') {
+                        ecuacion += `${toFraction(coef)}×${toFraction(valor)}`;
+                    } else {
+                        ecuacion += `${coef.toFixed(2)}×${valor.toFixed(4)}`;
+                    }
+                }
+                    
+                    const esperado = matrizOriginal[i][columnas];
+                    const diferencia = Math.abs(suma - esperado);
+                    const correcto = diferencia < 1e-6;
+                    
+                    if (!correcto) todoCorrecto = false;
+                    
+                    html += `<div style="margin: 10px 0; padding: 10px; background: ${correcto ? 'rgba(40, 167, 69, 0.1)' : 'rgba(220, 53, 69, 0.1)'}; border-radius: 5px;">
+                        <strong>Ecuación ${i+1}:</strong> ${ecuacion} = ${formato === 'fraccion' ? toFraction(suma) : suma.toFixed(6)} 
+                        ${correcto ? '✅' : '❌'} (esperado: ${formato === 'fraccion' ? toFraction(esperado) : esperado})
+                    </div>`;
+                }
+                
+                html += `<div style="text-align: center; margin-top: 15px; font-weight: bold; color: ${todoCorrecto ? '#28a745' : '#dc3545'};">
+                    ${todoCorrecto ? '✅ Verificación exitosa: Todas las ecuaciones se cumplen' : '❌ Error en la verificación'}
+                </div></div>`;
+                
+                return html;
+                
+            } catch (error) {
+                return `<div class="error">Error en la verificación: ${error.message}</div>`;
+            }
+        }
+        
+        // Inicializar la aplicación
+        document.addEventListener('DOMContentLoaded', function() {
+            generarMatriz();
+            
+            // Event listeners para actualizar matriz automáticamente
+            document.getElementById('filas').addEventListener('change', generarMatriz);
+            document.getElementById('columnas').addEventListener('change', generarMatriz);
+            
+            // Validación en tiempo real
+            document.addEventListener('input', function(e) {
+                if (e.target.classList.contains('matriz-input')) {
+                    const valor = e.target.value;
+                    if (valor && isNaN(parseExpression(valor))) {
+                        e.target.style.borderColor = '#dc3545';
+                        e.target.title = 'Valor no válido';
+                    } else {
+                        e.target.style.borderColor = '#ddd';
+                        e.target.title = '';
+                    }
+                }
+            });
+            
+            // Atajos de teclado
+            document.addEventListener('keydown', function(e) {
+                if (e.ctrlKey && e.key === 'Enter') {
+                    e.preventDefault();
+                    resolverSistema();
+                }
+            });
+        });
+        
+        // Función auxiliar para formatear números
+        function formatearNumero(num, formato) {
+            if (Math.abs(num) < 1e-10) return '0';
+            
+            if (formato === 'fraccion') {
+                return toFraction(num);
+            } else {
+                return num.toFixed(6).replace(/\.?0+$/, '');
+            }
+        }
+        
+        // Función para exportar resultados
+        function exportarResultados() {
+            const resultados = document.getElementById('results').innerHTML;
+            if (!resultados || resultados.includes('Error')) {
+                alert('No hay resultados válidos para exportar');
+                return;
+            }
+            
+            const fecha = new Date().toLocaleDateString();
+            const contenido = `
+                <html>
+                <head>
+                    <title>Resultados - Resolvedor de Ecuaciones Lineales</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        .step { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+                        .step-title { font-weight: bold; color: #333; margin-bottom: 10px; }
+                        .matriz-display { background: #f8f9fa; padding: 10px; border-radius: 5px; }
+                        table { margin: 0 auto; border-collapse: separate; border-spacing: 5px; }
+                        td { padding: 5px; text-align: center; background: white; border: 1px solid #ddd; }
+                    </style>
+                </head>
+                <body>
+                    <h1>Resultados del Resolvedor de Ecuaciones Lineales</h1>
+                    <p>Fecha: ${fecha}</p>
+                    ${resultados}
+                </body>
+                </html>
+            `;
+            
+            const blob = new Blob([contenido], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `ecuaciones_${fecha.replace(/\//g, '-')}.html`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
